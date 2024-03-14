@@ -1,4 +1,5 @@
 import math
+from pprint import pprint
 
 def get_vars():
     n_teams = input("How many teams? Enter a single number: ")
@@ -15,10 +16,10 @@ def get_vars():
 
 def make_playoff_bracket(n_teams):
     max_court = 6
-    # max_bracket = 4
     min_teams = 6
 
     if n_teams < min_teams:
+        print('Not Enough Teams')
         return False
 
     n_games = n_teams -1
@@ -35,6 +36,7 @@ def make_playoff_bracket(n_teams):
         max_bracket = 32
         bracket_depth = 6
     else:
+        print('Too Many Teams')
         return False
     num_courts = math.ceil(n_teams/max_court)
     num_rounds = n_teams - 3
@@ -44,41 +46,74 @@ def make_playoff_bracket(n_teams):
         res = make_n_round(res, level)
     res = make_final_round(res, bracket_depth)
 
-    print(res)
+    return res
 
 
 
 def make_final_round(res:dict, bracket_depth:int) -> dict:
-    final_div_1 = res[f'Round {bracket_depth-1}']['Division 1']['Matchups']
-    final_div_2 = res[f'Round {bracket_depth-1}']['Division 2']['Matchups']
-    div_1_winner = ['w_' + '_'.join([str(m) for m in match]) for match in final_div_1]
-    div_2_winner = ['w_' + '_'.join([str(m) for m in match]) for match in final_div_2]
-    res[f'Final Round']={'Matchups':[div_1_winner[0], div_2_winner[0]]}
+    final_div_1_m = res[f'Round {bracket_depth-1}']['Division 1']['Matchups']
+    final_div_2_m = res[f'Round {bracket_depth-1}']['Division 2']['Matchups']
+
+    if not final_div_1_m:
+        div_1_winner = res[f'Round {bracket_depth-1}']['Division 1']['Byes']
+    else:
+        div_1_winner = ['w_' + '_'.join([str(m) for m in match]) for match in final_div_1_m][0]
+    if not final_div_2_m:
+        div_2_winner = res[f'Round {bracket_depth-1}']['Division 2']['Byes']
+    else:
+        div_2_winner = ['w_' + '_'.join([str(m) for m in match]) for match in final_div_2_m][0]
+    res[f'Final Round']={'Matchups':[div_1_winner, div_2_winner]}
     
     return res
 
 
 def make_n_round(res:dict, level:int) -> dict:
-    div_1_matches = res['Round 1']['Division 1']['Matchups']
-    div_1_byes = res['Round 1']['Division 1']['Byes']
+    div_1_matches = res[f'Round {level -1}']['Division 1']['Matchups']
+    div_2_matches = res[f'Round {level -1}']['Division 2']['Matchups']
+    div_1_byes = res[f'Round {level -1}']['Division 1']['Byes']
+    div_2_byes = res[f'Round {level -1}']['Division 2']['Byes']
+
     div_1_winners = ['w_' + '_'.join([str(m) for m in match]) for match in div_1_matches]
+    div_2_winners = ['w_' + '_'.join([str(m) for m in match]) for match in div_2_matches]
     next_div_1_matchups = []
+    next_div_2_matchups = []
+
     for bye in div_1_byes:
-        next_div_1_matchups.append([bye, div_1_winners[0]])
+        next_div_1_matchups.append([bye, next(iter(div_1_winners))])
         div_1_winners.pop(0)
     if div_1_winners:
         next_div_1_matchups = list_to_matchups_from_center(div_1_winners, next_div_1_matchups)
+        for i in next_div_1_matchups:
+            if isinstance(i, str) and i in div_1_winners:
+                div_1_winners.pop(div_1_winners.index(i))
+            elif isinstance(i, list):
+                for j in i:
+                    if isinstance(j, str) and j in div_1_winners:
+                        div_1_winners.pop(div_1_winners.index(j))
+    next_div_1_byes = div_1_winners
 
-    div_2_matches = res['Round 1']['Division 2']['Matchups']
-    div_2_byes = res['Round 1']['Division 2']['Byes']
-    div_2_winners = ['w_' + '_'.join([str(m) for m in match]) for match in div_2_matches]
-    next_div_2_matchups = []
     for bye in div_2_byes:
-        next_div_2_matchups.append([bye, div_2_winners[0]])
+        next_div_2_matchups.append([bye, next(iter(div_2_winners))])
         div_2_winners.pop(0)
     if div_2_winners:
         next_div_2_matchups = list_to_matchups_from_center(div_2_winners, next_div_2_matchups)
-    res[f'Round {level}']={'Division 1':{'Matchups':next_div_1_matchups}, 'Division 2':{'Matchups':next_div_2_matchups}}
+        for i in next_div_2_matchups:
+            if isinstance(i, str) and i in div_2_winners:
+                div_2_winners.pop(div_2_winners.index(i))
+            elif isinstance(i, list):
+                for j in i:
+                    if isinstance(j, str) and j in div_2_winners:
+                        div_2_winners.pop(div_2_winners.index(j))
+    next_div_2_byes = div_2_winners
+
+    res[f'Round {level}']={
+    'Division 1':
+     {'Matchups':next_div_1_matchups, 
+      'Byes':next_div_1_byes}, 
+     'Division 2':
+     {'Matchups':next_div_2_matchups,
+      'Byes':next_div_2_byes},
+     }
 
     return res
     
@@ -169,7 +204,18 @@ def list_to_matchups_from_center(lst:list, matchups:list) -> list:
     return matchups
 
 
+def main(n_teams:int):
+    res = make_playoff_bracket(n_teams)
+
+    if res:
+        print('Success!')
+        pprint(res)
+    else: 
+        print('Failure')
+
+
 if __name__ == "__main__":
-    for i in range(5,18):
-        make_playoff_bracket(i)
+    for i in range(5,19):
+        print(f'Teams: {i}')
+        main(i)
 
