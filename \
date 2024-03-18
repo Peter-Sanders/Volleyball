@@ -48,9 +48,8 @@ def make_playoff_bracket(n_teams):
     for level in range(2, bracket_depth):
         res = make_n_round(res, level)
     res = make_final_round(res, bracket_depth)
-    print(res)
 
-    schedule = make_court_schedule(n_courts, n_teams, res, bracket_depth, n_rounds)
+    make_court_schedule(n_courts, n_teams, res, bracket_depth, n_rounds)
 
     return schedule
 
@@ -173,16 +172,12 @@ def make_first_round(n_teams:int, max_bracket:int) -> dict:
     in_bye = teams[:num_byes]
     not_in_bye = list(set(teams)-set(in_bye))
 
-    print(in_bye, not_in_bye)
-
     n_games = int(len(not_in_bye)/2)
     n_refs = len(in_bye)*6
     in_bye, not_in_bye = add_first_round_refs(n_games, n_refs, in_bye, not_in_bye) 
 
-    print(in_bye, not_in_bye)
-
-
     matchups = []
+    rounds = []
     div = assign_bracket_divisions(n_teams)
     if n_teams < (max_bracket*1.5):
         offset = (n_teams - max_bracket)*2
@@ -220,11 +215,6 @@ def add_first_round_refs(n_games:int, n_refs:int, in_bye:list, not_in_bye:list) 
         print(f'we need {shortfall} more refs')
 
         for _ in range(shortfall):
-            in_bye.append(not_in_bye[0])
-            not_in_bye.pop(0)
-
-        if len(not_in_bye) % 3:
-            print('removing another team to balance bracket')
             in_bye.append(not_in_bye[0])
             not_in_bye.pop(0)
     
@@ -287,7 +277,7 @@ def main(n_teams:int):
 
 
 if __name__ == "__main__":
-    for i in range(8,9):
+    for i in range(7,8):
         print(f'Teams: {i}')
         main(i)
 
