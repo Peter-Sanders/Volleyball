@@ -39,15 +39,16 @@ def make_playoff_bracket(n_teams):
         print('Too Many Teams')
         return False
     num_courts = math.ceil(n_teams/max_court)
-    num_rounds = n_teams - 3
+    num_rounds = n_teams - 3    
+    num_refs = math.ceil(n_teams/3)
 
     res = make_first_round(n_teams, max_bracket)
+
     for level in range(2, bracket_depth):
         res = make_n_round(res, level)
     res = make_final_round(res, bracket_depth)
 
     return res
-
 
 
 def make_final_round(res:dict, bracket_depth:int) -> dict:
@@ -129,6 +130,11 @@ def make_first_round(n_teams:int, max_bracket:int) -> dict:
 
     in_bye = teams[:num_byes]
     not_in_bye = list(set(teams)-set(in_bye))
+
+    n_games = int(len(not_in_bye)/2)
+    n_refs = len(in_bye)*6
+    in_bye, not_in_bye = add_first_round_refs(n_games, n_refs, in_bye, not_in_bye) 
+
     matchups = []
     rounds = []
     div = assign_bracket_divisions(n_teams)
@@ -142,6 +148,9 @@ def make_first_round(n_teams:int, max_bracket:int) -> dict:
         matchups = list_to_matchups(not_in_bye, matchups)
         matchups.reverse()
 
+
+
+
     res = {'Round 1': {'Division 1':{'Matchups':[], 'Byes':[]}, 'Division 2':{'Matchups':[], 'Byes':[]}}}
     for match in matchups:
         if match[0] in div[0]:
@@ -154,9 +163,21 @@ def make_first_round(n_teams:int, max_bracket:int) -> dict:
             res['Round 1']['Division 1']['Byes'].append(bye)
         else:
             res['Round 1']['Division 2']['Byes'].append(bye)
-    # print(f"{n_teams} Teams first bracket depth matchups: {res}")
 
     return res
+
+
+def add_first_round_refs(n_games:int, n_refs:int, in_bye:list, not_in_bye:list) -> tuple:
+    if n_games > n_refs:
+
+        shortfall = math.ceil((n_games - n_refs)/6)
+        print(f'we need {shortfall} more refs')
+
+        for _ in range(shortfall):
+            in_bye.append(not_in_bye[0])
+            not_in_bye.pop(0)
+    
+    return in_bye, not_in_bye
 
 
 def assign_bracket_divisions(n_teams:int) -> list:
@@ -215,7 +236,7 @@ def main(n_teams:int):
 
 
 if __name__ == "__main__":
-    for i in range(5,19):
+    for i in range(32):
         print(f'Teams: {i}')
         main(i)
 
